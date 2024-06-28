@@ -112,5 +112,26 @@ func main() {
 
 	_ = fastnetmon_client
 
-	// https://github.com/FastNetMon/baseline_magician/blob/6087dd64f44e8e76c6a09a1980d10c0156ef398a/main.go#L106
+	// Adjsut flow spec rule
+
+	// Remove ports from it
+	flow_spec_rule.SourcePorts = []uint{}
+	flow_spec_rule.DestinationPorts = []uint{}
+
+	// Remove packet lengths
+	flow_spec_rule.PacketLengths = []uint{}
+
+	// Add fragmentation flags
+	flow_spec_rule.FragmentationFlags = []string{"is-fragment"}
+
+	fast_logger.Printf("Complementary Flow Spec rule: %+v", flow_spec_rule)
+
+	// Encode to JSON for checking
+	encodedJSON, err := json.Marshal(flow_spec_rule)
+
+	if err != nil {
+		fast_logger.Fatalf("Cannot encode JSON: %v", err)
+	}
+
+	fast_logger.Printf("Encoded Flow Spec in JSON: %s", string(encodedJSON))
 }
