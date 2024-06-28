@@ -96,8 +96,21 @@ func main() {
 		len(flow_spec_rule.SourcePorts) == 1 && flow_spec_rule.SourcePorts[0] == 0 &&
 		len(flow_spec_rule.DestinationPorts) == 1 && flow_spec_rule.DestinationPorts[0] == 0 {
 		fast_logger.Printf("Matched rule action: %s", callback_data.Action)
+	} else {
+		fast_logger.Fatalf("We do not handle such rules, ignoring")
 	}
 
-	// Connect to API: 	fastnetmon_client, err := fastnetmon.NewClient(configuration.ApiHost, configuration.ApiPort, configuration.ApiUser, configuration.ApiPassword)
+	// Time to pass it to FastNetMon
+
+	fast_logger.Printf("Connect to FastNetMon API")
+
+	fastnetmon_client, err := fastnetmon.NewClient(conf.ApiHost, conf.ApiPort, conf.ApiUser, conf.ApiPassword)
+
+	if err != nil {
+		fast_logger.Fatalf("Cannot connect to client: %v", err)
+	}
+
+	_ = fastnetmon_client
+
 	// https://github.com/FastNetMon/baseline_magician/blob/6087dd64f44e8e76c6a09a1980d10c0156ef398a/main.go#L106
 }
