@@ -1,7 +1,6 @@
 package fastnetmon
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -230,6 +229,17 @@ type ResponseJson struct {
 	Success   bool   `json:"success"`
 	ErrorText string `json:"error_text"`
 	Value     string `json:"value"`
+}
+
+// Wrapper structure to carry Flow Spec announce and it's UUID
+type ResponseFlowSpecAnnounce struct {
+	UUID     string       `json:"uuid"`
+	Announce FlowSpecRule `json:"announce"`
+}
+
+type ResponseFlowSpecJson struct {
+	Success bool                       `json:"success"`
+	Values  []ResponseFlowSpecAnnounce `json:"values"`
 }
 
 type ResponseHostGroupConfigurationJson struct {
@@ -702,18 +712,8 @@ func (client *FastNetMonClient) AddFlowSpecRule(flow_spec_rule FlowSpecRule) (bo
 	return response.Success, nil
 }
 
-type api_flow_spec_announce struct {
-	UUID     string           `json:"uuid"`
-	Announce *json.RawMessage `json:"announce"`
-}
-
-type flow_spec_response struct {
-	Success bool                     `json:"success"`
-	Values  []api_flow_spec_announce `json:"values"`
-}
-
-// Returns all networks known by FastNetMon
-func (client *FastNetMonClient) GetFlowSpecRules() ([]api_announce, error) {
+// Returns all active flow spec announces
+func (client *FastNetMonClient) GetFlowSpecRules() ([]ResponseFlowSpecAnnounce, error) {
 	resp, err := grequests.Get(client.Prefix+"/flowspec", client.Ro)
 
 	if err != nil {
@@ -728,7 +728,7 @@ func (client *FastNetMonClient) GetFlowSpecRules() ([]api_announce, error) {
 		}
 	}
 
-	flow_spec_response := flow_spec_response{}
+	flow_spec_response := ResponseFlowSpecJson{}
 	err = resp.JSON(&flow_spec_response)
 
 	if err != nil {
