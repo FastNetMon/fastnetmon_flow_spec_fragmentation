@@ -134,4 +134,28 @@ func main() {
 	}
 
 	fast_logger.Printf("Encoded Flow Spec in JSON: %s", string(encodedJSON))
+
+	if callback_data.Action == "partial_block" {
+
+		response, err := fastnetmon_client.AddFlowSpecRule(flow_spec_rule)
+
+		if err != nil {
+			fast_logger.Fatalf("Cannot create Flow Spec anounce: %v", err)
+		}
+
+		fast_logger.Printf("Successfully created announce")
+
+		_ = response
+
+	} else if callback_data.Action == "partial_unblock" {
+		fast_logger.Printf("Removal logic is not implemented")
+
+		response, err := fastnetmon_client.GetFlowSpecRules()
+
+		if err != nil {
+			fast_logger.Fatalf("Cannot get Flow Spec anounces: %v", err)
+		}
+
+		fast_logger.Printf("Flow Spec announces: %+v", response)
+	}
 }

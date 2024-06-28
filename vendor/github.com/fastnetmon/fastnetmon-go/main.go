@@ -1,6 +1,7 @@
 package fastnetmon
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -669,4 +670,70 @@ func Create_host_group_with_all_options(fastnetmon_client *FastNetMonClient, new
 	}
 
 	return nil
+}
+
+// Adds Flow Spec announce
+func (client *FastNetMonClient) AddFlowSpecRule(flow_spec_rule FlowSpecRule) (bool, error) {
+	request_options := client.Ro
+
+	request_options.JSON = flow_spec_rule
+
+	resp, err := grequests.Put(client.Prefix+"/flowspec", client.Ro)
+
+	if err != nil {
+		return false, fmt.Errorf("Cannot connect to API: %w", err)
+	}
+
+	if !resp.Ok {
+		if resp.StatusCode == 401 {
+			return false, errors.New("Auth denied")
+		} else {
+			return false, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
+		}
+	}
+
+	response := ErrorJson{}
+	err = resp.JSON(&response)
+
+	if err != nil {
+		return false, err
+	}
+
+	return response.Success, nil
+}
+
+type api_flow_spec_announce struct {
+	UUID     string           `json:"uuid"`
+	Announce *json.RawMessage `json:"announce"`
+}
+
+type flow_spec_response struct {
+	Success bool                     `json:"success"`
+	Values  []api_flow_spec_announce `json:"values"`
+}
+
+// Returns all networks known by FastNetMon
+func (client *FastNetMonClient) GetFlowSpecRules() ([]api_announce, error) {
+	resp, err := grequests.Get(client.Prefix+"/flowspec", client.Ro)
+
+	if err != nil {
+		return nil, fmt.Errorf("Cannot connect to API: %w", err)
+	}
+
+	if !resp.Ok {
+		if resp.StatusCode == 401 {
+			return nil, errors.New("Auth denied")
+		} else {
+			return nil, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
+		}
+	}
+
+	flow_spec_response := flow_spec_response{}
+	err = resp.JSON(&flow_spec_response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return flow_spec_response.Values, nil
 }
