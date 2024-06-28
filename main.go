@@ -69,7 +69,7 @@ func main() {
 	if len(flow_spec_rule.Protocols) == 1 && flow_spec_rule.Protocols[0] == "udp" &&
 		len(flow_spec_rule.SourcePorts) == 1 && flow_spec_rule.SourcePorts[0] == 0 &&
 		len(flow_spec_rule.DestinationPorts) == 1 && flow_spec_rule.DestinationPorts[0] == 0 {
-		fast_logger.Printf("Matched rule")
+		fast_logger.Printf("Matched rule action: %s", callback_data.Action)
 	}
 
 }
