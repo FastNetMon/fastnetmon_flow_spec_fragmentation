@@ -14,11 +14,37 @@ import (
 var fast_logger = log.New(os.Stderr, fmt.Sprintf(" %d ", os.Getpid()), log.LstdFlags)
 
 type Configuration struct {
-	Log_path string `json:"log_path" fastnetmon_type:"string"`
+	Log_path    string `json:"log_path" fastnetmon_type:"string"`
+	ApiUser     string `json:"api_user"`
+	ApiPassword string `json:"api_password"`
+	ApiHost     string `json:"api_host"`
+	ApiPort     uint32 `json:"api_port"`
 }
 
+var conf Configuration
+
 func main() {
-	conf := Configuration{Log_path: "/var/log/fastnetmon/fastnetmon_flow_spec_fragmentation.log"}
+	conf.ApiUser = "admin"
+	conf.ApiPassword = "test_password"
+	conf.ApiHost = "127.0.0.1"
+	conf.ApiPort = 10007
+
+	file_as_array, err := ioutil.ReadFile("/etc/fastnetmon/fastnetmon_flow_spec_fragmentation.conf")
+
+	if err != nil {
+		log.Fatalf("Could not read configuration file with error: %v", err)
+	}
+
+	// This command will override our default configuration
+	err = json.Unmarshal(file_as_array, &conf)
+
+	if err != nil {
+		log.Fatalf("Could not read json configuration: %v", err)
+	}
+
+	if conf.Log_path == "" {
+		conf.Log_path = "/var/log/fastnetmon/fastnetmon_flow_spec_fragmentation.log"
+	}
 
 	log_file, err := os.OpenFile(conf.Log_path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
@@ -72,4 +98,6 @@ func main() {
 		fast_logger.Printf("Matched rule action: %s", callback_data.Action)
 	}
 
+	// Connect to API: 	fastnetmon_client, err := fastnetmon.NewClient(configuration.ApiHost, configuration.ApiPort, configuration.ApiUser, configuration.ApiPassword)
+	// https://github.com/FastNetMon/baseline_magician/blob/6087dd64f44e8e76c6a09a1980d10c0156ef398a/main.go#L106
 }
