@@ -57,4 +57,5 @@ func main() {
 		fast_logger.Fatalf("Unknown scope: %s Only host scope is supported", alert_scope)
 	}
 
+	fast_logger.Printf("Flow Spec rules: %+v", callback_data.FlowSpecRules)
 }
