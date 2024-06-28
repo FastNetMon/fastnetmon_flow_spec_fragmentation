@@ -58,4 +58,18 @@ func main() {
 	}
 
 	fast_logger.Printf("Flow Spec rules: %+v", callback_data.FlowSpecRules)
+
+	if len(callback_data.FlowSpecRules) == 0 {
+		fast_logger.Fatalf("Empty list of Flow Spec rules")
+	}
+
+	// We have at least one rule. Our core does not return more then one
+	flow_spec_rule := callback_data.FlowSpecRules[0]
+
+	if len(flow_spec_rule.Protocols) == 1 && flow_spec_rule.Protocols[0] == "udp" &&
+		len(flow_spec_rule.SourcePorts) == 1 && flow_spec_rule.SourcePorts[0] == 0 &&
+		len(flow_spec_rule.DestinationPorts) == 1 && flow_spec_rule.DestinationPorts[0] == 0 {
+		fast_logger.Printf("Matched rule")
+	}
+
 }
