@@ -1,5 +1,5 @@
 # fastnetmon_flow_spec_fragmentation
-In this repo you can find callback which allows you to block fragmentaed traffic when FastNetMon dertects attack with zero ports
+In this repo you can find callback which allows you to block fragmnted traffic when FastNetMon detects attack with zero ports
 
 To start please configure FastNetMon [API](https://fastnetmon.com/docs-fnm-advanced/advanced-api/)
 
@@ -45,7 +45,7 @@ Then remove main announce;
 sudo fcli delete flowspec 30314e1f-d122-4f3f-8fcf-8cfbf3f7a427
 ```
 
-And check that FastNetMOn removed supplementary on too.
+And check that FastNetMon removed supplementary on too.
 
 ```
 sudo fcli show flowspec
