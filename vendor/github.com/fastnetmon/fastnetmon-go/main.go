@@ -737,3 +737,29 @@ func (client *FastNetMonClient) GetFlowSpecRules() ([]ResponseFlowSpecAnnounce, 
 
 	return flow_spec_response.Values, nil
 }
+
+// Removes Flow Spec entry using UUID
+func (client *FastNetMonClient) RemoveFlowSpecRule(mitigation_uuid string) (bool, error) {
+	resp, err := grequests.Delete(client.Prefix+"/flowspec/"+mitigation_uuid, client.Ro)
+
+	if err != nil {
+		return false, fmt.Errorf("Cannot connect to API: %w", err)
+	}
+
+	if !resp.Ok {
+		if resp.StatusCode == 401 {
+			return false, errors.New("Auth denied")
+		} else {
+			return false, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
+		}
+	}
+
+	response := ErrorJson{}
+	err = resp.JSON(&response)
+
+	if err != nil {
+		return false, err
+	}
+
+	return response.Success, nil
+}

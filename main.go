@@ -168,7 +168,22 @@ func main() {
 			}
 
 			if string(encoded_announce) == string(encodedJSON) {
-				fast_logger.Fatalf("Found UUID for supplemental Flow Spec rule: %s", flow_spec_announce.UUID)
+				fast_logger.Printf("Found UUID for supplemental Flow Spec rule: %s", flow_spec_announce.UUID)
+
+				// Withdraw it:
+				result_withdrawal, err := fastnetmon_client.RemoveFlowSpecRule(flow_spec_announce.UUID)
+
+				if err != nil {
+					fast_logger.Fatalf("Failed to remove Flow Spec rule: %v", err)
+				}
+
+				if !result_withdrawal {
+					fast_logger.Fatalf("Failed to remove Flow Spec rule")
+				}
+
+				fast_logger.Printf("Successfulyl removed supplementary Flow Spec rule")
+				// Done!
+				os.Exit(0)
 			}
 		}
 	}
