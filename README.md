@@ -12,3 +12,17 @@ Then create file /etc/fastnetmon/fastnetmon_flow_spec_fragmentation.conf and put
   "api_port": 10007
 }
 ```
+
+Then download binary file of integration and put it to /opt/fastnetmon_flow_spec_fragmentation and set chmod flag for it:
+```
+chmod +x /opt/fastnetmon_flow_spec_fragmentation
+```
+
+
+After that specify it on FastNetMon side as callback script:
+```
+sudo fcli set main notify_script_enabled enable
+sudo fcli set main notify_script_format json
+sudo fcli set main notify_script_path /opt/fastnetmon_flow_spec_fragmentation
+sudo fcli commit
+```

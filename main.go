@@ -148,8 +148,6 @@ func main() {
 		_ = response
 
 	} else if callback_data.Action == "partial_unblock" {
-		fast_logger.Printf("Removal logic is not implemented")
-
 		response, err := fastnetmon_client.GetFlowSpecRules()
 
 		if err != nil {
@@ -157,5 +155,21 @@ func main() {
 		}
 
 		fast_logger.Printf("Flow Spec announces: %+v", response)
+
+		fast_logger.Printf("Flow Spec supplemental announce: %+v", flow_spec_rule)
+
+		for _, flow_spec_announce := range response {
+			// OK, that's nasty but reflect.DeepEqual is not working for this case well
+			encoded_announce, err := json.Marshal(flow_spec_announce.Announce)
+
+			if err != nil {
+				fast_logger.Printf("Cannot marshal: %v Skip comparison", err)
+				continue
+			}
+
+			if string(encoded_announce) == string(encodedJSON) {
+				fast_logger.Fatalf("Found UUID for supplemental Flow Spec rule: %s", flow_spec_announce.UUID)
+			}
+		}
 	}
 }
