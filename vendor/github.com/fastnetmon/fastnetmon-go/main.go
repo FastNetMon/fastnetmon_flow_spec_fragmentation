@@ -38,54 +38,6 @@ type CallbackDetails struct {
 
 	// Detailed packet dump in parsed format
 	PacketDumpDetailed []CallbackPacketDumpEntry `json:"packet_dump_detailed"`
-
-	// BGP Flow Spec rules
-	FlowSpecRules []FlowSpecRule `json:"flow_spec_rules"`
-}
-type FlowSpecAction struct {
-	// Rate
-	Rate uint `json:"rate"`
-}
-
-type FlowSpecRule struct {
-	// IPv4 network in CIDR format, optional field
-	SourcePrefix string `json:"source_prefix,omitempty"`
-
-	// IPv4 network in CIDR format, optional field
-	DestinationPrefix string `json:"destination_prefix,omitempty"`
-
-	// List of destination ports (from 0 to 65535), optional field
-	DestinationPorts []uint `json:"destination_ports,omitempty"`
-
-	// List of source ports (from 0 to 65535), optional field
-	SourcePorts []uint `json:"source_ports,omitempty"`
-
-	// List of packet sizes (from 0 to 1500), optional field
-	PacketLengths []uint `json:"packet_lengths,omitempty"`
-
-	// List of protocols (allowed options udp, tcp, icmp, gre), optional field
-	Protocols []string `json:"protocols,omitempty"`
-
-	// List of fragmentation flags (allowed values: dont-fragment, is-fragment, first-fragment, last-fragment, not-a-fragment), optional field
-	FragmentationFlags []string `json:"fragmentation_flags,omitempty"`
-
-	// List of TCP flags, allowed only when TCP used in protocols list. Allowed values: syn, ack, fin, urgent, push, rst. Flags also could be mixed with "|" sign (tcp|push). Optional field
-	TcpFlags []string `json:"tcp_flags,omitempty"`
-
-	// List of TTLs for traffic matching, non RFC compliant addition
-	Ttls []uint `json:"ttls,omitempty"`
-
-	// List of vlans for traffic matching, non RFC compliant addition
-	Vlans []uint `json:"vlans,omitempty"`
-
-	// Action type, allowed values: accept, discard, rate-limit, redirect, mark
-	ActionType string `json:"action_type,omitempty"`
-
-	// Optional details specific for action
-	Action FlowSpecAction `json:"action,omitempty"`
-
-	// List of IPs which can be used when action is set to "accept" to forward traffic to them
-	IPv4NextHops []string `json:"ipv4_nexthops,omitempty"`
 }
 
 // Keeps fields specific for threshold
@@ -229,17 +181,6 @@ type ResponseJson struct {
 	Success   bool   `json:"success"`
 	ErrorText string `json:"error_text"`
 	Value     string `json:"value"`
-}
-
-// Wrapper structure to carry Flow Spec announce and it's UUID
-type ResponseFlowSpecAnnounce struct {
-	UUID     string       `json:"uuid"`
-	Announce FlowSpecRule `json:"announce"`
-}
-
-type ResponseFlowSpecJson struct {
-	Success bool                       `json:"success"`
-	Values  []ResponseFlowSpecAnnounce `json:"values"`
 }
 
 type ResponseHostGroupConfigurationJson struct {
@@ -680,86 +621,4 @@ func Create_host_group_with_all_options(fastnetmon_client *FastNetMonClient, new
 	}
 
 	return nil
-}
-
-// Adds Flow Spec announce
-func (client *FastNetMonClient) AddFlowSpecRule(flow_spec_rule FlowSpecRule) (bool, error) {
-	request_options := client.Ro
-
-	request_options.JSON = flow_spec_rule
-
-	resp, err := grequests.Put(client.Prefix+"/flowspec", client.Ro)
-
-	if err != nil {
-		return false, fmt.Errorf("Cannot connect to API: %w", err)
-	}
-
-	if !resp.Ok {
-		if resp.StatusCode == 401 {
-			return false, errors.New("Auth denied")
-		} else {
-			return false, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
-		}
-	}
-
-	response := ErrorJson{}
-	err = resp.JSON(&response)
-
-	if err != nil {
-		return false, err
-	}
-
-	return response.Success, nil
-}
-
-// Returns all active flow spec announces
-func (client *FastNetMonClient) GetFlowSpecRules() ([]ResponseFlowSpecAnnounce, error) {
-	resp, err := grequests.Get(client.Prefix+"/flowspec", client.Ro)
-
-	if err != nil {
-		return nil, fmt.Errorf("Cannot connect to API: %w", err)
-	}
-
-	if !resp.Ok {
-		if resp.StatusCode == 401 {
-			return nil, errors.New("Auth denied")
-		} else {
-			return nil, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
-		}
-	}
-
-	flow_spec_response := ResponseFlowSpecJson{}
-	err = resp.JSON(&flow_spec_response)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return flow_spec_response.Values, nil
-}
-
-// Removes Flow Spec entry using UUID
-func (client *FastNetMonClient) RemoveFlowSpecRule(mitigation_uuid string) (bool, error) {
-	resp, err := grequests.Delete(client.Prefix+"/flowspec/"+mitigation_uuid, client.Ro)
-
-	if err != nil {
-		return false, fmt.Errorf("Cannot connect to API: %w", err)
-	}
-
-	if !resp.Ok {
-		if resp.StatusCode == 401 {
-			return false, errors.New("Auth denied")
-		} else {
-			return false, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
-		}
-	}
-
-	response := ErrorJson{}
-	err = resp.JSON(&response)
-
-	if err != nil {
-		return false, err
-	}
-
-	return response.Success, nil
 }
