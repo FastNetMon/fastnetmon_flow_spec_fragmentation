@@ -38,6 +38,54 @@ type CallbackDetails struct {
 
 	// Detailed packet dump in parsed format
 	PacketDumpDetailed []CallbackPacketDumpEntry `json:"packet_dump_detailed"`
+
+	// BGP Flow Spec rules
+	FlowSpecRules []FlowSpecRule `json:"flow_spec_rules"`
+}
+type FlowSpecAction struct {
+	// Rate
+	Rate uint `json:"rate"`
+}
+
+type FlowSpecRule struct {
+	// IPv4 network in CIDR format, optional field
+	SourcePrefix string `json:"source_prefix,omitempty"`
+
+	// IPv4 network in CIDR format, optional field
+	DestinationPrefix string `json:"destination_prefix,omitempty"`
+
+	// List of destination ports (from 0 to 65535), optional field
+	DestinationPorts []uint `json:"destination_ports,omitempty"`
+
+	// List of source ports (from 0 to 65535), optional field
+	SourcePorts []uint `json:"source_ports,omitempty"`
+
+	// List of packet sizes (from 0 to 1500), optional field
+	PacketLengths []uint `json:"packet_lengths,omitempty"`
+
+	// List of protocols (allowed options udp, tcp, icmp, gre), optional field
+	Protocols []string `json:"protocols,omitempty"`
+
+	// List of fragmentation flags (allowed values: dont-fragment, is-fragment, first-fragment, last-fragment, not-a-fragment), optional field
+	FragmentationFlags []string `json:"fragmentation_flags,omitempty"`
+
+	// List of TCP flags, allowed only when TCP used in protocols list. Allowed values: syn, ack, fin, urgent, push, rst. Flags also could be mixed with "|" sign (tcp|push). Optional field
+	TcpFlags []string `json:"tcp_flags,omitempty"`
+
+	// List of TTLs for traffic matching, non RFC compliant addition
+	Ttls []uint `json:"ttls,omitempty"`
+
+	// List of vlans for traffic matching, non RFC compliant addition
+	Vlans []uint `json:"vlans,omitempty"`
+
+	// Action type, allowed values: accept, discard, rate-limit, redirect, mark
+	ActionType string `json:"action_type,omitempty"`
+
+	// Optional details specific for action
+	Action FlowSpecAction `json:"action,omitempty"`
+
+	// List of IPs which can be used when action is set to "accept" to forward traffic to them
+	IPv4NextHops []string `json:"ipv4_nexthops,omitempty"`
 }
 
 // Keeps fields specific for threshold
@@ -66,9 +114,6 @@ type CallbackAttackDetails struct {
 	// low, middle, high, unknown
 	AttackSeverity string `json:"attack_severity"`
 
-	// Arbitrary string
-	AttackType string `json:"attack_type"`
-
 	// Hostgroup name, only for per host callbacks
 	HostGroup string `json:"host_group"`
 
@@ -92,12 +137,6 @@ type CallbackAttackDetails struct {
 
 	AttackDetectionThreshold          string `json:"attack_detection_threshold"`
 	AttackDetectionThresholdDirection string `json:"attack_detection_threshold_direction"`
-
-	// Incoming, outgoing or unknown. Deprecated field, please use AttackDetectionThresholdDirection instead
-	AttackDirection string `json:"attack_direction"`
-
-	// tcp, udp, icmp, unknown
-	AttackProtocol string `json:"attack_protocol"`
 
 	// automatic, manual, other
 	AttackDetectionSource string `json:"attack_detection_source"`
@@ -160,7 +199,7 @@ type CallbackPacketDumpEntry struct {
 	SampleRatio   uint64 `json:"sample_ratio"`
 
 	// tcp, udp, icmp and unknown
-	Protocol string `json"protocol"`
+    Protocol string `json:"protocol"`
 
 	// Address of device which sent this flow / packet
 	AgentAddress string `json:"agent_address"`
@@ -181,6 +220,17 @@ type ResponseJson struct {
 	Success   bool   `json:"success"`
 	ErrorText string `json:"error_text"`
 	Value     string `json:"value"`
+}
+
+// Wrapper structure to carry Flow Spec announce and it's UUID
+type ResponseFlowSpecAnnounce struct {
+	UUID     string       `json:"uuid"`
+	Announce FlowSpecRule `json:"announce"`
+}
+
+type ResponseFlowSpecJson struct {
+	Success bool                       `json:"success"`
+	Values  []ResponseFlowSpecAnnounce `json:"values"`
 }
 
 type ResponseHostGroupConfigurationJson struct {
@@ -261,7 +311,7 @@ func (client *FastNetMonClient) SetBoolOptionHostGroup(hostgroup_name string, op
 		value_string = "enable"
 	}
 
-	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+hostgroup_name+"/"+option_name+"/"+value_string, client.Ro)
+	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+hostgroup_name+"/"+option_name+"/"+value_string, grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -290,7 +340,7 @@ func (client *FastNetMonClient) SetStringListOptionHostGroup(hostgroup_name stri
 	// Replace prohibited symbols
 	value = strings.Replace(value, "/", "%2f", -1)
 
-	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+hostgroup_name+"/"+option_name+"/"+value, client.Ro)
+	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+hostgroup_name+"/"+option_name+"/"+value, grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -316,7 +366,7 @@ func (client *FastNetMonClient) SetStringListOptionHostGroup(hostgroup_name stri
 
 // Set specified int option for host group
 func (client *FastNetMonClient) SetUnsignedIntegerOptionHostGroup(hostgroup_name string, option_name string, value uint) (bool, error) {
-	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+hostgroup_name+"/"+option_name+"/"+fmt.Sprintf("%d", value), client.Ro)
+	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+hostgroup_name+"/"+option_name+"/"+fmt.Sprintf("%d", value), grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -342,7 +392,7 @@ func (client *FastNetMonClient) SetUnsignedIntegerOptionHostGroup(hostgroup_name
 
 // Creates host groups with specified name
 func (client *FastNetMonClient) CreateHostGroup(name string) (bool, error) {
-	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+name, client.Ro)
+	resp, err := grequests.Put(client.Prefix+"/hostgroup/"+name, grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -368,7 +418,7 @@ func (client *FastNetMonClient) CreateHostGroup(name string) (bool, error) {
 
 // Removes host group by name
 func (client *FastNetMonClient) RemoveHostGroup(name string) (bool, error) {
-	resp, err := grequests.Delete(client.Prefix+"/hostgroup/"+name, client.Ro)
+	resp, err := grequests.Delete(client.Prefix+"/hostgroup/"+name, grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -394,7 +444,7 @@ func (client *FastNetMonClient) RemoveHostGroup(name string) (bool, error) {
 
 // Blocks some specified blackhole host
 func (client *FastNetMonClient) BlackholeRemote(ip_address string) (bool, error) {
-	resp, err := grequests.Put(client.Prefix+"/remote_blackhole/"+ip_address, client.Ro)
+	resp, err := grequests.Put(client.Prefix+"/remote_blackhole/"+ip_address, grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -420,7 +470,7 @@ func (client *FastNetMonClient) BlackholeRemote(ip_address string) (bool, error)
 
 // Returns all IPs blocked using remote blackhole
 func (client *FastNetMonClient) GetRemoteBlackhole() ([]BlackholeAnnounces, error) {
-	resp, err := grequests.Get(client.Prefix+"/remote_blackhole", client.Ro)
+	resp, err := grequests.Get(client.Prefix+"/remote_blackhole", grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return nil, fmt.Errorf("Cannot connect to API: %w", err)
@@ -446,7 +496,7 @@ func (client *FastNetMonClient) GetRemoteBlackhole() ([]BlackholeAnnounces, erro
 
 // Removes remote blackhole entry using UUID
 func (client *FastNetMonClient) RemoveRemoteBlackhole(mitigation_uuid string) (bool, error) {
-	resp, err := grequests.Delete(client.Prefix+"/remote_blackhole/"+mitigation_uuid, client.Ro)
+	resp, err := grequests.Delete(client.Prefix+"/remote_blackhole/"+mitigation_uuid, grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return false, fmt.Errorf("Cannot connect to API: %w", err)
@@ -472,7 +522,7 @@ func (client *FastNetMonClient) RemoveRemoteBlackhole(mitigation_uuid string) (b
 
 // Returns all networks known by FastNetMon
 func (client *FastNetMonClient) GetNetworks() ([]string, error) {
-	resp, err := grequests.Get(client.Prefix+"/main/networks_list", client.Ro)
+	resp, err := grequests.Get(client.Prefix+"/main/networks_list", grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return nil, fmt.Errorf("Cannot connect to API: %w", err)
@@ -498,7 +548,7 @@ func (client *FastNetMonClient) GetNetworks() ([]string, error) {
 
 // Retrieves all host groups
 func (client *FastNetMonClient) GetAllHostgroups() ([]Ban_settings_t, error) {
-	resp, err := grequests.Get(client.Prefix+"/hostgroup", client.Ro)
+	resp, err := grequests.Get(client.Prefix+"/hostgroup", grequests.FromRequestOptions(client.Ro))
 
 	if err != nil {
 		return nil, fmt.Errorf("Cannot connect to API: %w", err)
@@ -621,4 +671,86 @@ func Create_host_group_with_all_options(fastnetmon_client *FastNetMonClient, new
 	}
 
 	return nil
+}
+
+// Adds Flow Spec announce
+func (client *FastNetMonClient) AddFlowSpecRule(flow_spec_rule FlowSpecRule) (bool, error) {
+	request_options := client.Ro
+
+	request_options.JSON = flow_spec_rule
+
+	resp, err := grequests.Put(client.Prefix+"/flowspec", grequests.FromRequestOptions(client.Ro))
+
+	if err != nil {
+		return false, fmt.Errorf("Cannot connect to API: %w", err)
+	}
+
+	if !resp.Ok {
+		if resp.StatusCode == 401 {
+			return false, errors.New("Auth denied")
+		} else {
+			return false, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
+		}
+	}
+
+	response := ErrorJson{}
+	err = resp.JSON(&response)
+
+	if err != nil {
+		return false, err
+	}
+
+	return response.Success, nil
+}
+
+// Returns all active flow spec announces
+func (client *FastNetMonClient) GetFlowSpecRules() ([]ResponseFlowSpecAnnounce, error) {
+	resp, err := grequests.Get(client.Prefix+"/flowspec", grequests.FromRequestOptions(client.Ro))
+
+	if err != nil {
+		return nil, fmt.Errorf("Cannot connect to API: %w", err)
+	}
+
+	if !resp.Ok {
+		if resp.StatusCode == 401 {
+			return nil, errors.New("Auth denied")
+		} else {
+			return nil, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
+		}
+	}
+
+	flow_spec_response := ResponseFlowSpecJson{}
+	err = resp.JSON(&flow_spec_response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return flow_spec_response.Values, nil
+}
+
+// Removes Flow Spec entry using UUID
+func (client *FastNetMonClient) RemoveFlowSpecRule(mitigation_uuid string) (bool, error) {
+	resp, err := grequests.Delete(client.Prefix+"/flowspec/"+mitigation_uuid, grequests.FromRequestOptions(client.Ro))
+
+	if err != nil {
+		return false, fmt.Errorf("Cannot connect to API: %w", err)
+	}
+
+	if !resp.Ok {
+		if resp.StatusCode == 401 {
+			return false, errors.New("Auth denied")
+		} else {
+			return false, fmt.Errorf("Did not return OK: %d", resp.StatusCode)
+		}
+	}
+
+	response := ErrorJson{}
+	err = resp.JSON(&response)
+
+	if err != nil {
+		return false, err
+	}
+
+	return response.Success, nil
 }

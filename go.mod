@@ -1,12 +1,13 @@
 module github.com/FastNetMon/fastnetmon_flow_spec_fragmentation
 
-go 1.22.2
+go 1.23.0
+
 toolchain go1.24.1
 
-require github.com/fastnetmon/fastnetmon-go v0.0.0-20240617110354-7092b47e30fb
+require github.com/fastnetmon/fastnetmon-go v0.0.0-20260324095514-df8a9aa5d08b
 
 require (
-	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a // indirect
-	golang.org/x/net v0.38.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/levigross/grequests v0.0.0-20250606031859-3f3c12e4e704 // indirect
+	golang.org/x/net v0.41.0 // indirect
 )
